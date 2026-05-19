@@ -1,0 +1,289 @@
+/* Tailwind PRIMERO: en v4 debe procesarse antes que cualquier otro @import,
+   o no se genera el theme/preflight (síntoma: fondo blanco, texto negro). */
+@import "tailwindcss";
+/* Google Fonts después (varios @import consecutivos son válidos en CSS).
+   Inter (UI/body), Bebas Neue (displays/títulos), JetBrains Mono (datos). */
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+/* Base a prueba de fallos: fondo/tinta en HEX (no var) para que la home
+   nunca salga en blanco aunque algo del theme fallase. */
+@layer base {
+  html,
+  body,
+  #root {
+    background-color: #0a0a0b;
+    color: #f5f2ec;
+    min-height: 100vh;
+  }
+}
+
+/* ── Identidad visual: lujo deportivo (Aston Martin / McLaren) ──────────────
+   Acento champagne/cobre #C9A86A. CERO naranja. Cambiar un token aquí
+   re-tematiza toda la app: las utilidades bg-*/text-*/border-* se generan
+   solas a partir de estos nombres (Tailwind v4 @theme). */
+@theme {
+  --color-bg: #0a0a0b;
+  --color-surface: #141416;
+  --color-surface-hover: #1c1c20; /* = surface-2: hover/dropdowns/modales */
+  --color-surface-2: #1c1c20;
+  --color-border: #2a2a30;
+  --color-border-strong: #3a3a42;
+  --color-text: #f5f2ec; /* blanco hueso / cream */
+  --color-muted: #8a8a92; /* gris cálido (text-muted) */
+  --color-text-dim: #5a5a62; /* gris auxiliar (text-text-dim) */
+  --color-accent: #c9a86a; /* champagne / cobre apagado */
+  --color-accent-hover: #d9bb7c;
+  --color-accent-dim: #8b7548;
+  --color-secondary: #c9a86a; /* sin azul: cualquier "secondary" → acento */
+  --color-success: #6b9f71; /* verde inglés muted */
+  --color-danger: #b85450; /* rojo borgoña, no chillón */
+  --color-warning: #c9a86a; /* reusa el acento */
+
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Bebas Neue", "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* Custom easing curves (stronger than CSS defaults) — Emil Kowalski's curves.
+   Exposed as Tailwind utilities too: ease-out-strong, ease-in-out-strong. */
+@theme {
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Premium automotive surface tokens. --shadow-* exposes a `shadow-card-hover`
+     utility; --gradient-card is consumed by .card-premium below. */
+  --color-surface-elevated: #1c1c20;
+  /* Sombras sutiles en negro (el lujo no usa sombras de color). */
+  --shadow-card-hover: 0 18px 40px -16px rgba(0, 0, 0, 0.65);
+  --gradient-card: linear-gradient(
+    165deg,
+    var(--color-surface) 0%,
+    #1c1c20 100%
+  );
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tratamiento display: Bebas Neue va en mayúsculas con tracking abierto.
+   Toda la app ya usa `font-display` en sus títulos y el wordmark, así que
+   esta única regla les da el aire de revista de coches sin tocar cada JSX. */
+.font-display {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Consistent, visible focus ring across interactive elements. */
+*:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Accessibility: gut motion for users who ask for it, keep opacity/color. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Card lift on hover — gated behind a real pointer so touch taps don't trigger it. */
+@media (hover: hover) and (pointer: fine) {
+  .card-lift {
+    transition:
+      transform 240ms var(--ease-out-strong),
+      box-shadow 240ms var(--ease-out-strong);
+  }
+  .card-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px -10px rgb(0 0 0 / 0.55);
+  }
+}
+
+/* Press feedback for any pressable element. */
+.press {
+  transition: transform 160ms var(--ease-out-strong);
+}
+.press:active {
+  transform: scale(0.97);
+}
+
+/* Stagger entrance for grids/lists. */
+@keyframes enter-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.enter-up {
+  opacity: 0;
+  animation: enter-up 400ms var(--ease-out-strong) forwards;
+}
+
+/* CSS-only stagger: each direct child enters 60ms after the previous one.
+   Used by the detail page info column. */
+.stagger-children > * {
+  opacity: 0;
+  animation: enter-up 400ms var(--ease-out-strong) forwards;
+}
+.stagger-children > *:nth-child(1) {
+  animation-delay: 0ms;
+}
+.stagger-children > *:nth-child(2) {
+  animation-delay: 60ms;
+}
+.stagger-children > *:nth-child(3) {
+  animation-delay: 120ms;
+}
+.stagger-children > *:nth-child(4) {
+  animation-delay: 180ms;
+}
+.stagger-children > *:nth-child(5) {
+  animation-delay: 240ms;
+}
+.stagger-children > *:nth-child(6) {
+  animation-delay: 300ms;
+}
+.stagger-children > *:nth-child(7) {
+  animation-delay: 360ms;
+}
+.stagger-children > *:nth-child(8) {
+  animation-delay: 420ms;
+}
+
+/* Hero entrance — a single elegant fade + slight rise. */
+@keyframes hero-fade {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.hero-fade {
+  opacity: 0;
+  animation: hero-fade 600ms var(--ease-out-strong) forwards;
+}
+
+/* Hairline champagne ring (no colored glow — restraint). */
+.glow-accent {
+  box-shadow: 0 0 0 1px rgba(201, 168, 106, 0.18);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* ── The premium card ───────────────────────────────────────────────────
+   Base surface for cards and the filter bar. Only transform / opacity /
+   box-shadow / border-color animate, so it stays on the GPU. */
+.card-premium {
+  position: relative;
+  background: var(--gradient-card);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 6px; /* rounded-md — el lujo es sobrio, sin esquinas blandas */
+  overflow: hidden;
+  /* Elevación en reposo: sombra negra suave para despegar la card del
+     fondo + una hairline interior arriba (luz cenital) que le da relieve.
+     Sobrio, sin sombras de color. */
+  box-shadow:
+    0 1px 0 0 rgba(245, 242, 236, 0.04) inset,
+    0 10px 30px -18px rgba(0, 0, 0, 0.8);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card-premium--interactive {
+    transition: transform 250ms var(--ease-out-strong),
+      box-shadow 250ms var(--ease-out-strong),
+      border-color 250ms var(--ease-out-strong);
+  }
+  .card-premium--interactive:hover {
+    transform: translateY(-6px);
+    border-color: rgba(201, 168, 106, 0.55);
+    /* Mantiene la hairline interior + añade un anillo champagne muy tenue
+       y una sombra más profunda: la card "flota" claramente al hover. */
+    box-shadow:
+      0 1px 0 0 rgba(245, 242, 236, 0.06) inset,
+      0 0 0 1px rgba(201, 168, 106, 0.15),
+      0 22px 46px -18px rgba(0, 0, 0, 0.85);
+  }
+  /* Image push-in on hover. */
+  .card-image img {
+    transition: transform 300ms var(--ease-out-strong);
+  }
+  .card-premium--interactive:hover .card-image img {
+    transform: scale(1.05);
+  }
+  /* CTA nudges right + brightens on hover. */
+  .card-cta {
+    opacity: 0.6;
+    transition: transform 250ms var(--ease-out-strong),
+      opacity 250ms var(--ease-out-strong);
+  }
+  .card-premium--interactive:hover .card-cta {
+    opacity: 1;
+    transform: translateX(4px);
+  }
+}
+
+/* Touch / reduced-motion: keep the CTA legible without any motion. */
+@media not all and (hover: hover) and (pointer: fine) {
+  .card-cta {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-image img,
+  .card-premium--interactive:hover .card-image img {
+    transform: none !important;
+  }
+}
+
+/* Animated underline for nav links (0 → 100% width on hover/active). */
+.nav-underline {
+  position: relative;
+}
+.nav-underline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  height: 2px;
+  width: 100%;
+  background: var(--color-accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 220ms var(--ease-out-strong);
+}
+.nav-underline:hover::after,
+.nav-underline--active::after {
+  transform: scaleX(1);
+}
+
+/* Gallery main image crossfade on thumbnail change. */
+.gallery-fade {
+  animation: gallery-fade 200ms ease forwards;
+}
+@keyframes gallery-fade {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
